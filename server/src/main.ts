@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import * as dotenv from 'dotenv';
 import { authenticate } from './Authentication.js';
+import { mockMessages } from './mockedMessages.js';
 
 dotenv.config();
 
@@ -25,13 +26,21 @@ enum EVENTS {
   CLOSE = 'close',
 }
 
-enum MESSAGE_TYPES {
+export enum MESSAGE_TYPES {
   ERROR = 'error',
   TEXT = 'text',
   TYPING_STATUS = 'typing_status',
+  ALL_MESSAGES = 'all_messages',
 }
 
-type Message = {
+export type AllMessages = {
+  type: MESSAGE_TYPES.ALL_MESSAGES;
+  payload: {
+    messages: Message[];
+  };
+}
+
+export type Message = {
   type: MESSAGE_TYPES;
   payload: {
     body?: string;
@@ -45,16 +54,18 @@ const wsServer = new WebSocketServer({ port: PORT });
 console.log(`Server is running on port ${PORT}`);
 
 wsServer.on(EVENTS.CONNECTION, (ws, req) => {
-  const authResult = authenticate(req);
-  if (!authResult.success) {
-    console.error(`Authentication failed: ${authResult.error.message}`);
-    ws.send(JSON.stringify({
-      type: MESSAGE_TYPES.ERROR,
-      payload: { body: `Unauthorized: ${authResult.error.message}` }
-    }));
-    ws.terminate();
-    return; // Stop processing
-  }
+  ws.send(JSON.stringify({ type: MESSAGE_TYPES.ALL_MESSAGES, payload: { messages: mockMessages } }));
+  // TODO: AUTH
+  // const authResult = authenticate(req);
+  // if (!authResult.success) {
+  //   console.error(`Authentication failed: ${authResult.error.message}`);
+  //   ws.send(JSON.stringify({
+  //     type: MESSAGE_TYPES.ERROR,
+  //     payload: { body: `Unauthorized: ${authResult.error.message}` }
+  //   }));
+  //   ws.terminate();
+  //   return; // Stop processing
+  // }
 
   ws.on(EVENTS.MESSAGE, (message) => {
     try {

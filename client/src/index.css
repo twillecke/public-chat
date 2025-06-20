@@ -30,6 +30,10 @@ body {
   min-height: 100vh;
 }
 
+p {
+  margin: 0 0 0.5rem 0;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -45,6 +49,10 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 button:hover {
   border-color: #646cff;
@@ -65,4 +73,38 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+input {
+  height: 2rem;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.message-frame {
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  padding: 2rem;
+  height: 500px;
+  overflow-y: auto;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* input item shoudl strech to the end of the container */
+  input {
+    flex: 1;
+    margin-right: 10px;
+  }
+  width: 100%;
+  padding: 10px;
 }
