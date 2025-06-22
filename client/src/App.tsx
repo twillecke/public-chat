@@ -3,7 +3,7 @@ import "./App.css";
 import useWebSocket from "react-use-websocket";
 
 function App() {
-	const WS_URL = "ws://localhost:8080";
+	const WS_URL = "wss://public-chat-9lkk.onrender.com";
 	const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_URL, {
 		share: false,
 		shouldReconnect: () => true,
