@@ -1,6 +1,5 @@
 import { WebSocketServer } from "ws";
 import * as dotenv from "dotenv";
-import { authenticate } from "./Authentication.js";
 import { mockMessages } from "./mockedMessages.js";
 
 dotenv.config();
