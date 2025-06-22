@@ -4,11 +4,10 @@ import useWebSocket from "react-use-websocket";
 
 function App() {
 	const WS_URL = "ws://localhost:8080";
-	const { sendJsonMessage, sendMessage, lastJsonMessage, readyState } =
-		useWebSocket(WS_URL, {
-			share: false,
-			shouldReconnect: () => true,
-		});
+	const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_URL, {
+		share: false,
+		shouldReconnect: () => true,
+	});
 
 	const [messages, setMessages] = useState<any[]>([]);
 	const [textInput, setTextInput] = useState("");
