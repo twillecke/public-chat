@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import useWebSocket from "react-use-websocket";
 
+const WS_URL = import.meta.env.VITE_WS_URL;
+
 function App() {
-	const WS_URL = "wss://public-chat-9lkk.onrender.com";
 	const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_URL, {
 		share: false,
 		shouldReconnect: () => true,
