@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import useWebSocket from "react-use-websocket";
+import MessageFrame from "./MessageFrame";
 
 const WS_URL = import.meta.env.VITE_WS_URL;
 
@@ -18,20 +19,22 @@ function App() {
 	const [usernameInput, setUsernameInput] = useState("");
 
 	useEffect(() => {
-		if (lastJsonMessage) {
-			const message = lastJsonMessage as any;
-			if (message.type === "all_messages") {
-				setMessages(message.payload.messages);
-			} else if (message.type === "text") {
-				setMessages((prevMessages) => [...prevMessages, message]);
-			} else if (message.type === "typing_status") {
-				console.log(
-					"Received typing status:",
-					message.payload.isTyping,
-				);
-				if (message.payload.username === username) return;
-				setIsExternalTyping(message.payload.isTyping);
-			}
+		if (!lastJsonMessage) return;
+		const { type, payload } = lastJsonMessage as any;
+		switch (type) {
+			case "all_messages":
+				setMessages(payload.messages);
+				break;
+			case "text":
+				setMessages((prevMessages) => [...prevMessages, lastJsonMessage]);
+				break;
+			case "typing_status":
+				if (payload.username !== username) {
+					setIsExternalTyping(payload.isTyping);
+				}
+				break;
+			default:
+				break;
 		}
 	}, [lastJsonMessage]);
 
@@ -88,31 +91,8 @@ function App() {
 			<h1>Public Chat</h1>
 			<div className="chat-container">
 				<div className="message-frame">
-					<div>
-						{messages.map((message) => (
-							<div key={message.payload.id}>
-								<p>
-									<span>
-										{new Date(
-											message.payload.timestamp,
-										).toLocaleTimeString([], {
-											hour: "2-digit",
-											minute: "2-digit",
-											hour12: false,
-										})}
-										{" ~ "}
-									</span>
-									<b>{message.payload.username}</b>:{" "}
-									{message.payload.body}
-								</p>
-							</div>
-						))}
-						{isExternalTyping && (
-							<span className="is-typing">...</span>
-						)}
-					</div>
+					<MessageFrame messages={messages} isExternalTyping={isExternalTyping} />
 				</div>
-
 				{username && (
 					<div className="input-container">
 						<input
