@@ -93,7 +93,6 @@ function App() {
 							<div key={message.payload.id}>
 								<p>
 									<span>
-										{/* time stamp must be hour and minute only */}
 										{new Date(
 											message.payload.timestamp,
 										).toLocaleTimeString([], {
