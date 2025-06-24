@@ -1,6 +1,7 @@
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import * as dotenv from "dotenv";
 import { mockMessages } from "./mockedMessages.js";
+import handleIncomingMessage from "./handleMessage.js";
 
 dotenv.config();
 
@@ -9,13 +10,11 @@ type Success<T> = {
 	value: T;
 };
 
-// A type to represent a failure outcome
 type Failure = {
 	success: false;
 	error: { message: string };
 };
 
-// A union of the two, this is our Result type
 export type Result<T> = Success<T> | Failure;
 
 enum EVENTS {
@@ -42,7 +41,7 @@ export type AllMessages = {
 export type Message = {
 	type: MESSAGE_TYPES;
 	payload: {
-		id?: string; // Optional, for text messages
+		id?: string;
 		body?: string;
 		isTyping?: boolean;
 		username?: string;
@@ -50,67 +49,33 @@ export type Message = {
 	};
 };
 
-const memoryDabase: Message[] = mockMessages;
-
+const memoryDatabase: Message[] = mockMessages;
 const PORT = Number(process.env.PORT);
 const wsServer = new WebSocketServer({ port: PORT });
 
 console.log(`Server is running on port ${PORT}`);
 
-wsServer.on(EVENTS.CONNECTION, (ws, req) => {
+wsServer.on(EVENTS.CONNECTION, (ws: WebSocket, req) => {
 	console.log("New client connected, sending current messages");
 	ws.send(
 		JSON.stringify({
 			type: MESSAGE_TYPES.ALL_MESSAGES,
-			payload: { messages: memoryDabase },
+			payload: { messages: memoryDatabase },
 		}),
 	);
 
 	ws.on(EVENTS.MESSAGE, (message) => {
 		try {
-			const data: Message = JSON.parse(message.toString());
-			console.log("Received message:", data);
-
-			if (data.type === MESSAGE_TYPES.TEXT) {
-				console.log("Received text message:", data.payload.body);
-				const newMessage: Message = {
-					type: MESSAGE_TYPES.TEXT,
-					payload: {
-						id: crypto.randomUUID(), // Generate a unique ID for the message
-						body: data.payload.body,
-						username: data.payload.username,
-						timestamp: new Date().toISOString(),
-					},
-				};
-				memoryDabase.push(newMessage);
-				wsServer.clients.forEach((client) => {
-					if (client.readyState === client.OPEN) {
-						client.send(
-							JSON.stringify({
-								type: MESSAGE_TYPES.TEXT,
-								payload: newMessage.payload,
-							}),
-						);
-					}
-				});
-			}
-			if (data.type === MESSAGE_TYPES.TYPING_STATUS) {
-				console.log("Received typing status:", data.payload.isTyping);
-				const typingStatus: Message = {
-					type: MESSAGE_TYPES.TYPING_STATUS,
-					payload: {
-						isTyping: data.payload.isTyping,
-						username: data.payload.username,
-					},
-				};
-				wsServer.clients.forEach((client) => {
-					if (client.readyState === client.OPEN) {
-						client.send(JSON.stringify(typingStatus));
-					}
-				});
-			}
+			const parsedMessage = JSON.parse(message.toString()) as Message;
+			handleIncomingMessage(wsServer, parsedMessage, memoryDatabase);
 		} catch (error) {
 			console.error("Error parsing message:", error);
+			ws.send(
+				JSON.stringify({
+					type: MESSAGE_TYPES.ERROR,
+					payload: { message: "Invalid message format" },
+				}),
+			);
 		}
 	});
 });
