@@ -1,10 +1,12 @@
+import type { Message } from "../Types";
+import { formatTimestamp } from "../Utils/Utils";
 
 
 export default function MessageFrame({
   messages,
   isExternalTyping
 }: {
-  messages: any[];
+  messages: Message[];
   isExternalTyping: boolean;
 }) {
   return (
@@ -15,18 +17,14 @@ export default function MessageFrame({
             <p>
               <span>
                 {
-                  new Date(
-                    message.payload.timestamp,
-                  ).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  })
+                  message?.payload.timestamp
+                    ? formatTimestamp(message?.payload.timestamp)
+                    : "Unknown time"
                 }
                 {" ~ "}
               </span>
-              < b > {message.payload.username} </b>:{" "}
-              {message.payload.body}
+              <b>{message?.payload.username}</b>:{" "}
+              {message?.payload.body}
             </p>
           </div>
         ))

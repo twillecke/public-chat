@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 import useWebSocket from "react-use-websocket";
-import MessageFrame from "./MessageFrame";
+import MessageFrame from "./components/MessageFrame";
+import UsernameInput from "./components/UsernameInput";
+import MessageInput from "./components/MessageInput";
+import useTypingStatus from "./hooks/useTypingStatus";
+import useIncomingMessages from "./hooks/useIncomingMessages";
+import type { Message } from "./Types";
 
 const WS_URL = import.meta.env.VITE_WS_URL;
 
@@ -11,59 +16,24 @@ function App() {
 		shouldReconnect: () => true,
 	});
 
-	const [messages, setMessages] = useState<any[]>([]);
+	const [messages, setMessages] = useState<Message[]>([]);
 	const [textInput, setTextInput] = useState("");
 	const [isTyping, setIsTyping] = useState(false);
 	const [isExternalTyping, setIsExternalTyping] = useState(false);
 	const [username, setUsername] = useState("");
 	const [usernameInput, setUsernameInput] = useState("");
 
-	useEffect(() => {
-		if (!lastJsonMessage) return;
-		const { type, payload } = lastJsonMessage as any;
-		switch (type) {
-			case "all_messages":
-				setMessages(payload.messages);
-				break;
-			case "text":
-				setMessages((prevMessages) => [...prevMessages, lastJsonMessage]);
-				break;
-			case "typing_status":
-				if (payload.username !== username) {
-					setIsExternalTyping(payload.isTyping);
-				}
-				break;
-			default:
-				break;
-		}
-	}, [lastJsonMessage]);
+	useIncomingMessages(
+		lastJsonMessage,
+		setMessages,
+		setIsExternalTyping,
+		username
+	);
 
-	useEffect(() => {
-		if (isTyping) {
-			console.log("isTyping");
-			sendJsonMessage({
-				type: "typing_status",
-				payload: {
-					isTyping: true,
-					username: username,
-				},
-			});
-			return;
-		}
-		if (!isTyping) {
-			console.log("stopped typing");
-			sendJsonMessage({
-				type: "typing_status",
-				payload: {
-					isTyping: false,
-					username: username,
-				},
-			});
-		}
-	}, [isTyping]);
+	useTypingStatus(isTyping, username, sendJsonMessage);
 
 	const handleSendMessage = () => {
-		if (textInput.length === 0 || isTextOnlyWhitespace(textInput)) return;
+		if (textInput.trim().length === 0) return;
 		sendJsonMessage({
 			type: "text",
 			payload: {
@@ -81,11 +51,6 @@ function App() {
 		else setIsTyping(false);
 	};
 
-	const isTextOnlyWhitespace = (text: string) => text.trim() === "";
-
-	const handleButtonDisabled = () =>
-		textInput.length === 0 || isTextOnlyWhitespace(textInput);
-
 	return (
 		<>
 			<h1>Public Chat</h1>
@@ -94,57 +59,18 @@ function App() {
 					<MessageFrame messages={messages} isExternalTyping={isExternalTyping} />
 				</div>
 				{username && (
-					<div className="input-container">
-						<input
-							type="text"
-							placeholder="Enter your message"
-							value={textInput}
-							onChange={handleInputChange}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									handleSendMessage();
-								}
-							}}
-						/>
-						<button
-							onClick={handleSendMessage}
-							disabled={handleButtonDisabled()}
-						>
-							Send
-						</button>
-					</div>
+					<MessageInput
+						textInput={textInput}
+						handleInputChange={handleInputChange}
+						handleSendMessage={handleSendMessage}
+					/>
 				)}
-
 				{!username && (
-					<div className="input-container">
-						<input
-							type="text"
-							placeholder="Enter a username to start chatting"
-							value={usernameInput}
-							onChange={(e) => setUsernameInput(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									if (usernameInput.length === 0) return;
-									if (isTextOnlyWhitespace(usernameInput))
-										return;
-									const username = usernameInput.trim();
-									setUsername(username);
-									setUsernameInput("");
-								}
-							}}
-						/>
-						<button
-							onClick={() => {
-								if (usernameInput.length === 0) return;
-								if (isTextOnlyWhitespace(usernameInput)) return;
-								const username = usernameInput.trim();
-								setUsername(username);
-								setUsernameInput("");
-							}}
-						>
-							Start
-						</button>
-					</div>
+					<UsernameInput
+						usernameInput={usernameInput}
+						setUsernameInput={setUsernameInput}
+						setUsername={setUsername}
+					/>
 				)}
 			</div>
 		</>
